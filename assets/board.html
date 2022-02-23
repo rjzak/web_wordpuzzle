@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Word Puzzle</title>
+    <script language="JavaScript" src="/jquery.js"></script>
+    <script language="JavaScript">
+        var count = 1;
+        function tryInput() {
+            document.getElementById("message").innerHTML = "";
+            if (count > 5) {
+                document.getElementById("message").innerHTML = "Out of turns!";
+                return;
+            }
+            let guess = document.getElementById("guessbox").value;
+            if (guess.length !== 5) {
+                document.getElementById("message").innerHTML = "<i>" + guess + " is not five characters!</i>";
+                document.getElementById("guessbox").value = "";
+                return;
+            }
+            alert("Count="+count);
+            $.ajax({url: "/guess?word="+guess, success: function(result){
+                //alert("AJAX response:"+result);
+                for(let i = 1; i < 6; i++) {
+                    let name = "r"+count+"c"+i;
+                    if (result[i-1] === "g") {
+                        document.getElementById(name).className = "greenCell";
+                        alert("Row="+count+", Col="+i+", Set green");
+                    } else if (result[i-1] === "y") {
+                        document.getElementById(name).className = "yellowCell";
+                        alert("Row="+count+", Col="+i+", Set yellow");
+                    } else {
+                        document.getElementById(name).className = "clearCell";
+                        alert("Row="+count+", Col="+i+", Set clear");
+                    }
+                    document.getElementById(name).innerText = guess[i-1];
+                }
+                if (result === "ggggg") {
+                    document.getElementById("message").innerHTML = "<font color='red'>You win!!</font>";
+                }
+            }});
+            count++;
+            document.getElementById("guessbox").value = "";
+            if (count === 5) {
+                document.getElementById("message").innerHTML = "<i>Game over.</i>";
+                document.getElementById("guessbutton").disabled = true;
+            }
+        }
+        function reset() {
+            count = 1;
+            document.getElementById("guessbutton").disabled = false;
+            document.getElementById("message").innerHTML = '';
+            for(let i = 1; i < 6; i++) {
+                for(let j = 1; j < 6; j++) {
+                    let name = "r"+i+"c"+j;
+                    document.getElementById(name).className = "clearCell";
+                    document.getElementById(name).innerText = "&nbsp;";
+                }
+            }
+        }
+    </script>
+    <style>
+        div.board {
+            width: 300px;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        td.greenCell {
+            background-color: green;
+            border: 1px solid;
+            width: 30px;
+        }
+        td.yellowCell {
+            background-color: yellow;
+            border: 1px solid;
+            width: 30px;
+        }
+        td.clearCell {
+            background-color: white;
+            border: 1px solid;
+            width: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="board">
+        <fieldset>
+            <legend>Word Puzzle!</legend>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="clearCell" id="r1c1">&nbsp;</td>
+                        <td class="clearCell" id="r1c2">&nbsp;</td>
+                        <td class="clearCell" id="r1c3">&nbsp;</td>
+                        <td class="clearCell" id="r1c4">&nbsp;</td>
+                        <td class="clearCell" id="r1c5">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td class="clearCell" id="r2c1">&nbsp;</td>
+                        <td class="clearCell" id="r2c2">&nbsp;</td>
+                        <td class="clearCell" id="r2c3">&nbsp;</td>
+                        <td class="clearCell" id="r2c4">&nbsp;</td>
+                        <td class="clearCell" id="r2c5">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td class="clearCell" id="r3c1">&nbsp;</td>
+                        <td class="clearCell" id="r3c2">&nbsp;</td>
+                        <td class="clearCell" id="r3c3">&nbsp;</td>
+                        <td class="clearCell" id="r3c4">&nbsp;</td>
+                        <td class="clearCell" id="r3c5">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td class="clearCell" id="r4c1">&nbsp;</td>
+                        <td class="clearCell" id="r4c2">&nbsp;</td>
+                        <td class="clearCell" id="r4c3">&nbsp;</td>
+                        <td class="clearCell" id="r4c4">&nbsp;</td>
+                        <td class="clearCell" id="r4c5">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td class="clearCell" id="r5c1">&nbsp;</td>
+                        <td class="clearCell" id="r5c2">&nbsp;</td>
+                        <td class="clearCell" id="r5c3">&nbsp;</td>
+                        <td class="clearCell" id="r5c4">&nbsp;</td>
+                        <td class="clearCell" id="r5c5">&nbsp;</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br/>
+            <input type="text" name="guessbox" id="guessbox" width="7" maxlength="5"/>
+            <input type="button" name="guessbutton" id="guessbutton" value="Try" onclick="javascript:tryInput();"/>
+            <input type="button" name="resetbutton" id="resetbutton" value="Reset" onclick="javascript:reset();"/>
+            <div id="message"></div>
+        </fieldset>
+    </div>
+</body>
+</html>
