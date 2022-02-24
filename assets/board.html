@@ -8,7 +8,7 @@
         var count = 1;
         function tryInput() {
             document.getElementById("message").innerHTML = "";
-            if (count > 5) {
+            if (count > 6) {
                 document.getElementById("message").innerHTML = "Out of turns!";
                 return;
             }
@@ -18,20 +18,20 @@
                 document.getElementById("guessbox").value = "";
                 return;
             }
-            alert("Count="+count);
-            $.ajax({url: "/guess?word="+guess, success: function(result){
-                //alert("AJAX response:"+result);
+            console.log("Count=" + count);
+            $.ajax({url: "/guess?word="+guess, success: function(result) {
+                console.log("AJAX response:" + result);
                 for(let i = 1; i < 6; i++) {
-                    let name = "r"+count+"c"+i;
+                    let name = "r" + count + "c" + i;
                     if (result[i-1] === "g") {
                         document.getElementById(name).className = "greenCell";
-                        alert("Row="+count+", Col="+i+", Set green");
+                        console.log("Row="+count+", Col="+i+", Set green");
                     } else if (result[i-1] === "y") {
                         document.getElementById(name).className = "yellowCell";
-                        alert("Row="+count+", Col="+i+", Set yellow");
+                        console.log("Row="+count+", Col="+i+", Set yellow");
                     } else {
                         document.getElementById(name).className = "clearCell";
-                        alert("Row="+count+", Col="+i+", Set clear");
+                        console.log("Row="+count+", Col="+i+", Set clear");
                     }
                     document.getElementById(name).innerText = guess[i-1];
                 }
@@ -41,7 +41,7 @@
             }});
             count++;
             document.getElementById("guessbox").value = "";
-            if (count === 5) {
+            if (count === 6) {
                 document.getElementById("message").innerHTML = "<i>Game over.</i>";
                 document.getElementById("guessbutton").disabled = true;
             }
@@ -50,13 +50,15 @@
             count = 1;
             document.getElementById("guessbutton").disabled = false;
             document.getElementById("message").innerHTML = '';
-            for(let i = 1; i < 6; i++) {
+            for(let i = 1; i < 7; i++) {
                 for(let j = 1; j < 6; j++) {
-                    let name = "r"+i+"c"+j;
+                    let name = "r" + i + "c" + j;
+                    console.log(name);
                     document.getElementById(name).className = "clearCell";
-                    document.getElementById(name).innerText = "&nbsp;";
+                    document.getElementById(name).innerHTML = "&nbsp;";
                 }
             }
+            console.log("reset() done");
         }
     </script>
     <style>
@@ -124,10 +126,17 @@
                         <td class="clearCell" id="r5c4">&nbsp;</td>
                         <td class="clearCell" id="r5c5">&nbsp;</td>
                     </tr>
+                    <tr>
+                        <td class="clearCell" id="r6c1">&nbsp;</td>
+                        <td class="clearCell" id="r6c2">&nbsp;</td>
+                        <td class="clearCell" id="r6c3">&nbsp;</td>
+                        <td class="clearCell" id="r6c4">&nbsp;</td>
+                        <td class="clearCell" id="r6c5">&nbsp;</td>
+                    </tr>
                 </tbody>
             </table>
             <br/>
-            <input type="text" name="guessbox" id="guessbox" width="7" maxlength="5"/>
+            <input type="text" name="guessbox" id="guessbox" width="7" maxlength="5" style="width: 120px;"/>
             <input type="button" name="guessbutton" id="guessbutton" value="Try" onclick="javascript:tryInput();"/>
             <input type="button" name="resetbutton" id="resetbutton" value="Reset" onclick="javascript:reset();"/>
             <div id="message"></div>
