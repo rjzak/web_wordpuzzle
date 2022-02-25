@@ -20,13 +20,15 @@
             }
             console.log("Count=" + count);
             $.ajax({url: "/guess?word="+guess, success: function(result) {
+                result = result.trim();
                 console.log("AJAX response:" + result);
                 for(let i = 1; i < 6; i++) {
+                    let index = i - 1;
                     let name = "r" + count + "c" + i;
-                    if (result[i-1] === "g") {
+                    if (result.charAt(index) === "g") {
                         document.getElementById(name).className = "greenCell";
                         console.log("Row="+count+", Col="+i+", Set green");
-                    } else if (result[i-1] === "y") {
+                    } else if (result.charAt(index) === "y") {
                         document.getElementById(name).className = "yellowCell";
                         console.log("Row="+count+", Col="+i+", Set yellow");
                     } else {
