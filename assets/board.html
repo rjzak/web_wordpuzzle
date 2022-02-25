@@ -38,8 +38,8 @@
                 if (result === "ggggg") {
                     document.getElementById("message").innerHTML = "<font color='red'>You win!!</font>";
                 }
+                count++;
             }});
-            count++;
             document.getElementById("guessbox").value = "";
             if (count === 6) {
                 document.getElementById("message").innerHTML = "<i>Game over.</i>";
