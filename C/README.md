@@ -7,3 +7,6 @@
 
 ### Requirements
 * gcc or llvm
+
+### Acknowledgements
+Thanks to [Dungyichao](https://github.com/Dungyichao/http_server) for the beginner code which was the basis for working with sockets.
