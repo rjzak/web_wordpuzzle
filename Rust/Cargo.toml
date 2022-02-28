@@ -1,0 +1,9 @@
+[package]
+name = "web_wordpuzzle"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "^1.15.0", features = ["full"] }
+axum = "^0.4.3"
+rand = "0.8.5"
