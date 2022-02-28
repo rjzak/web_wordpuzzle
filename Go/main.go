@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+//go:generate cp -r ../assets assets
 //go:embed assets/board.html
 var gameBoard []byte
 

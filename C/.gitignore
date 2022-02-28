@@ -1,3 +1,4 @@
 /.idea
 src/assets.h
 *.o
+web_wordpuzzle
