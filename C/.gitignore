@@ -1,4 +1,5 @@
 /.idea
 src/assets.h
 *.o
+*.wasm
 web_wordpuzzle
