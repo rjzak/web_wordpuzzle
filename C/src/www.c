@@ -89,19 +89,29 @@ void DestroyWebServer(WebServer* server) {
 }
 
 void RunWebServer(WebServer *server) {
+#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
     int addrlen = sizeof(server->address);
+#endif
     char buffer[30000] = {0};
     const size_t bufferlen = 30000;
     printf("Listening for connections\n");
     while(1) {
         int new_socket;
+#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
         if ((new_socket = accept(server->server_fd, (struct sockaddr *)&server->address, (socklen_t*)&addrlen))<0) {
             perror("In accept");
             exit(EXIT_FAILURE);
         }
+#else
+        new_socket = server->server_fd;
+#endif
 
         memset(buffer,0,bufferlen);
-        read(new_socket ,buffer,bufferlen);
+        ssize_t bytes_read = read(new_socket ,buffer,bufferlen);
+        if (bytes_read < 0) {
+            fprintf(stderr, "Error code %ld from read(%d): %s\n", bytes_read, new_socket, strerror(errno));
+            return;
+        }
         int i;
         printf("First 20 bytes: ");
         for(i = 0; i < 20; i++) {
@@ -154,7 +164,10 @@ void RunWebServer(WebServer *server) {
             }
         }
 
+#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+        printf("Closing socket.\n");
         close(new_socket);
         new_socket = 0;
+#endif
     }
 }
