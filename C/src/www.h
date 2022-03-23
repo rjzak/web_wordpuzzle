@@ -27,7 +27,11 @@ typedef struct {
     struct sockaddr_in address;
 } WebServer;
 
-WebServer* CreateWebServer(uint16_t port);
+#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+WebServer* CreateWebServerWithPort(uint16_t port);
+#else
+WebServer* CreateWebServerWithFD(int fd);
+#endif
 void DestroyWebServer(WebServer* server);
 void RunWebServer(WebServer *server);
 

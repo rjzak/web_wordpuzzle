@@ -8,7 +8,8 @@ const unsigned char CONTENT_TYPE_HTML[25] = "Content-Type: text/html\n\n";
 const unsigned char CONTENT_TYPE_PLAIN[26] = "Content-Type: text/plain\n\n";
 const unsigned char CONTENT_TYPE_JAVASCRIPT[31] = "Content-Type: text/javascript\n\n";
 
-WebServer* CreateWebServer(uint16_t port) {
+#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+WebServer* CreateWebServerWithPort(uint16_t port) {
     srand(time(NULL));
 
     WebServer *server = (WebServer*) malloc(sizeof(WebServer));
@@ -50,10 +51,39 @@ WebServer* CreateWebServer(uint16_t port) {
 
     return server;
 }
+#else
+WebServer* CreateWebServerWithFD(int fd) {
+    srand(time(NULL));
 
+    WebServer *server = (WebServer*) malloc(sizeof(WebServer));
+    if (server == NULL) {
+        perror("In malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    int randIndex = rand() % (sizeof(wordlist)/12u);
+    while(wordlist[randIndex] != 0x0A) {
+        randIndex++;
+    }
+    randIndex++;
+    int i;
+    for(i = 0; i < WORD_SIZE; i++) {
+        server->secret_word[i] = tolower(wordlist[randIndex+i]);
+    }
+    printf("The word: %s\n", server->secret_word);
+    server->server_fd = fd;
+    server->address.sin_family = AF_INET;
+    server->address.sin_addr.s_addr = INADDR_ANY;
+    server->address.sin_port = htons(8080);
+
+    return server;
+}
+#endif
 void DestroyWebServer(WebServer* server) {
+#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
     close(server->server_fd);
     server->server_fd = 0;
+#endif
     free(server);
     server = NULL;
 }

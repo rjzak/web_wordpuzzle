@@ -16,7 +16,7 @@ web_wordpuzzle: main.o www.o
 	gcc main.o www.o -o web_wordpuzzle ${FLAGS}
 
 web_wordpuzzle.wasm: src/main.c src/www.c src/www.h
-	${WASISDK}/bin/clang --sysroot=${WASISDK}/share/wasi-sysroot/ src/main.c src/www.c -Isrc/ -o main.wasm
+	${WASISDK}/bin/clang --sysroot=${WASISDK}/share/wasi-sysroot/ src/main.c src/www.c -Isrc/ -o web_wordpuzzle.wasm
 
 .phony: clean
 clean:
