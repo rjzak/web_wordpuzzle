@@ -107,6 +107,7 @@ void RunWebServer(WebServer *server) {
 #endif
 
         memset(buffer,0,bufferlen);
+        errno = 0;
         ssize_t bytes_read = read(new_socket ,buffer,bufferlen);
         if (bytes_read < 0) {
             fprintf(stderr, "Error code %ld from read(%d): %s\n", bytes_read, new_socket, strerror(errno));
