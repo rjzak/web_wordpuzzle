@@ -1,5 +1,7 @@
-use simple_logger::SimpleLogger;
+//use simple_logger::SimpleLogger;
 use rand::Rng;
+use mini_http;
+use mini_http::Server;
 
 // All the web server and network code by Harald H.
 // https://github.com/haraldh
@@ -48,9 +50,17 @@ fn check_word(query: Option<&str>, the_word: String) -> Vec<u8> {
     return response;
 }
 
-fn run() -> Result<(), Box<dyn std::error::Error>> {
-    SimpleLogger::new().init().unwrap();
+#[cfg(target_os = "wasi")]
+fn get_server() -> Server {
+    mini_http::Server::preopened().unwrap()
+}
 
+#[cfg(not(target_os = "wasi"))]
+fn get_server() -> Server {
+    mini_http::Server::new("127.0.0.1:8443").unwrap()
+}
+
+fn run() -> Result<(), Box<dyn std::error::Error>> {
     const WORDLIST: &str = include_str!("../../assets/wordList.txt");
 
     let mut rng = rand::thread_rng();
@@ -66,7 +76,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("The word: {}", the_word_string);
 
-    mini_http::Server::preopened()?
+    get_server()
         .tcp_nodelay(true)
         .start(move |req| match req.uri().path() {
             "/jquery.js" => mini_http::Response::builder()

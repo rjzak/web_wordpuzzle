@@ -1,16 +1,11 @@
 [package]
-name = "mini_http"
+name = "web_wordpuzzle"
 version = "0.1.0"
-description = "Simple HTTP server built on mio"
-license = "MIT"
+license = "Apache-2.0"
 edition = "2021"
 
 [dependencies]
-error-chain = "0.12"
-mio = { git = "https://github.com/haraldh/mio", branch = "combine_events", features=[ "os-poll", "net" ] }
-slab = "0.4"
+mini_http = {git = "https://github.com/haraldh/mini_http"}
 httparse = "1"
 http = "0.1"
-log = "0.4"
-simple_logger = "2.1"
 rand = "0.8.5"
