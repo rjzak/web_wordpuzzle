@@ -23,4 +23,4 @@ run_wasm: web_wordpuzzle.wasm
 
 .phony: clean
 clean:
-	rm *.o web_wordpuzzle web_wordpuzzle.wasm
+	rm -f *.o web_wordpuzzle web_wordpuzzle.wasm src/assets.h
