@@ -9,6 +9,6 @@ kind = "stderr"
 
 [[files]]
 kind = "listen"
-prot = "tcp"
-port = 8080
-name = "LISTEN"
+prot = "tls"
+port = 8443
+name = "TEST_TCP_LISTEN"
