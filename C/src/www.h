@@ -21,17 +21,22 @@
 
 #define WORD_SIZE 5
 
+#if !((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+#define WEB_ASSEMBLY_ASSUMED
+#endif
+
 typedef struct {
     char secret_word[WORD_SIZE];
     int server_fd;
     struct sockaddr_in address;
 } WebServer;
 
-#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
-WebServer* CreateWebServerWithPort(uint16_t port);
+#ifdef WEB_ASSEMBLY_ASSUMED
+WebServer* CreateWebServerWithFD(int sd);
 #else
-WebServer* CreateWebServerWithFD(int fd);
+WebServer* CreateWebServerWithPort(uint16_t port);
 #endif
+
 void DestroyWebServer(WebServer* server);
 void RunWebServer(WebServer *server);
 

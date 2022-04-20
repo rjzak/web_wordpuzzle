@@ -8,7 +8,36 @@ const unsigned char CONTENT_TYPE_HTML[25] = "Content-Type: text/html\n\n";
 const unsigned char CONTENT_TYPE_PLAIN[26] = "Content-Type: text/plain\n\n";
 const unsigned char CONTENT_TYPE_JAVASCRIPT[31] = "Content-Type: text/javascript\n\n";
 
-#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+
+#ifdef WEB_ASSEMBLY_ASSUMED
+// WebAssembly requires use of an existing socket descriptor
+WebServer* CreateWebServerWithFD(int sd) {
+    srand(time(NULL));
+
+    WebServer *server = (WebServer*) malloc(sizeof(WebServer));
+    if (server == NULL) {
+        perror("In malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    int randIndex = rand() % (sizeof(wordlist)/12u);
+    while(wordlist[randIndex] != 0x0A) {
+        randIndex++;
+    }
+    randIndex++;
+    int i;
+    for(i = 0; i < WORD_SIZE; i++) {
+        server->secret_word[i] = tolower(wordlist[randIndex+i]);
+    }
+    printf("The word: %s\n", server->secret_word);
+    server->server_fd = sd;
+    server->address.sin_family = AF_INET;
+    server->address.sin_addr.s_addr = INADDR_ANY;
+    server->address.sin_port = htons(8080);
+
+    return server;
+}
+#else
 WebServer* CreateWebServerWithPort(uint16_t port) {
     srand(time(NULL));
 
@@ -51,36 +80,10 @@ WebServer* CreateWebServerWithPort(uint16_t port) {
 
     return server;
 }
-#else
-WebServer* CreateWebServerWithFD(int fd) {
-    srand(time(NULL));
-
-    WebServer *server = (WebServer*) malloc(sizeof(WebServer));
-    if (server == NULL) {
-        perror("In malloc");
-        exit(EXIT_FAILURE);
-    }
-
-    int randIndex = rand() % (sizeof(wordlist)/12u);
-    while(wordlist[randIndex] != 0x0A) {
-        randIndex++;
-    }
-    randIndex++;
-    int i;
-    for(i = 0; i < WORD_SIZE; i++) {
-        server->secret_word[i] = tolower(wordlist[randIndex+i]);
-    }
-    printf("The word: %s\n", server->secret_word);
-    server->server_fd = fd;
-    server->address.sin_family = AF_INET;
-    server->address.sin_addr.s_addr = INADDR_ANY;
-    server->address.sin_port = htons(8080);
-
-    return server;
-}
 #endif
+
 void DestroyWebServer(WebServer* server) {
-#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+#ifndef WEB_ASSEMBLY_ASSUMED
     close(server->server_fd);
     server->server_fd = 0;
 #endif
@@ -89,7 +92,7 @@ void DestroyWebServer(WebServer* server) {
 }
 
 void RunWebServer(WebServer *server) {
-#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+#ifndef WEB_ASSEMBLY_ASSUMED
     int addrlen = sizeof(server->address);
 #endif
     char buffer[30000] = {0};
@@ -97,7 +100,7 @@ void RunWebServer(WebServer *server) {
     printf("Listening for connections\n");
     while(1) {
         int new_socket;
-#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+#ifndef WEB_ASSEMBLY_ASSUMED
         if ((new_socket = accept(server->server_fd, (struct sockaddr *)&server->address, (socklen_t*)&addrlen))<0) {
             perror("In accept");
             exit(EXIT_FAILURE);
@@ -114,11 +117,13 @@ void RunWebServer(WebServer *server) {
             return;
         }
         int i;
+#ifdef DEBUG
         printf("First 20 bytes: ");
         for(i = 0; i < 20; i++) {
             printf("%c", buffer[i]);
         }
         printf("\n");
+#endif
 
         if (buffer[0] != 0x47 || buffer[1] != 0x45 || buffer[2] != 0x54) { // !GET
             write(new_socket, HTTP_NOT_FOUND, sizeof(HTTP_NOT_FOUND));
@@ -126,23 +131,29 @@ void RunWebServer(WebServer *server) {
             write(new_socket, "Unsupported", 11);
         } else {
             if (buffer[4] == 0x2F && buffer[5] == 0x20) { // forward slash and space
+#ifdef DEBUG
                 printf("Root page, show gameboard\n");
+#endif
                 write(new_socket, HTTP_OK, sizeof(HTTP_OK));
                 write(new_socket, CONTENT_TYPE_HTML, sizeof(CONTENT_TYPE_HTML));
                 write(new_socket, board, sizeof(board));
             } else if (buffer[4] == 0x2F && buffer[5] == 0x6A && buffer[6] == 0x71 && buffer[7] == 0x75) { // forward slash jqu
+#ifdef DEBUG
                 printf("JQuery request\n");
+#endif
                 write(new_socket, HTTP_OK, sizeof(HTTP_OK));
                 write(new_socket, CONTENT_TYPE_JAVASCRIPT, sizeof(CONTENT_TYPE_JAVASCRIPT));
                 write(new_socket, jquery, sizeof jquery);
             } else if (buffer[4] == 0x2f && buffer[5] == 0x67 && buffer[6] == 0x75 && buffer[7] == 0x65 && buffer[8] == 0x73 && buffer[9] == 0x73) {
-                int i, j;
+                int j;
                 char word[WORD_SIZE];
                 for(i = 0; i < WORD_SIZE; i++) {
                     word[i] = buffer[16+i];
                 }
                 char response[WORD_SIZE] = {0x63}; // c
+#ifdef DEBUG
                 printf("Guess: %s\n", word);
+#endif
                 for(i = 0; i < WORD_SIZE; i++) {
                     if (word[i] == server->secret_word[i]) {
                         response[i] = 0x67; // g
@@ -165,8 +176,10 @@ void RunWebServer(WebServer *server) {
             }
         }
 
-#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
+#ifndef WEB_ASSEMBLY_ASSUMED
+#ifdef DEBUG
         printf("Closing socket.\n");
+#endif
         close(new_socket);
         new_socket = 0;
 #endif

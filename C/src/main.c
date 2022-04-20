@@ -2,9 +2,7 @@
 #include "www.h"
 
 int main() {
-#if ((defined(__APPLE__) || defined(__linux__) || defined(__unix__)))
-    WebServer * server = CreateWebServerWithPort(8080);
-#else
+#ifdef WEB_ASSEMBLY_ASSUMED
     char fdcount[2]; // FD integer + null terminator
     char *envvar = "FD_COUNT";
     int fd = 3; // Default Fd for the socket
@@ -12,12 +10,19 @@ int main() {
         // Check the FD_COUNT environment variable to see the number of FD's
         // Let's assume that we're using the last one
         snprintf(fdcount, 2, "%s", getenv(envvar));
-        //printf("Got FD_COUNT=%s\n", fdcount);
+#ifdef DEBUG
+        printf("Got FD_COUNT=%s\n", fdcount);
+#endif
         // Minus 1 for zero index
         fd = atoi(fdcount)-1;
-        //printf("FD=%d\n", fd);
+#ifdef DEBUG
+        printf("FD=%d\n", fd);
+#endif
     }
     WebServer * server = CreateWebServerWithFD(fd);
+#else
+    WebServer * server = CreateWebServerWithPort(8080);
+
 #endif
     RunWebServer(server);
     DestroyWebServer(server);
