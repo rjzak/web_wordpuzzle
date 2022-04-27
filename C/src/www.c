@@ -19,8 +19,12 @@ const unsigned char CONTENT_TYPE_JAVASCRIPT[31] = "Content-Type: text/javascript
 #ifdef __wasi__
 // WebAssembly requires use of an existing socket descriptor
 WebServer* CreateWebServerWithFD(int sd) {
-    //srand( (unsigned int) time(NULL));
+#else
+WebServer* CreateWebServerWithPort(uint16_t port) {
+#endif
 
+    // Better random int with stdlib
+    // https://stackoverflow.com/questions/822323/how-to-generate-a-random-int-in-c
     struct timespec nanos;
     clock_gettime(CLOCK_MONOTONIC, &nanos);
     srand(nanos.tv_nsec);
@@ -33,7 +37,7 @@ WebServer* CreateWebServerWithFD(int sd) {
 
     unsigned int randIndex = rand() % (sizeof(wordlist)/6u);
 #ifdef DEBUG
-    printf("randIndex: %d\nsizeof(wordlist): %ld\n", randIndex, sizeof(wordlist));
+    printf("randIndex: %d\nsizeof(wordlist): %ld\nNum words: %ld\n", randIndex, sizeof(wordlist), sizeof(wordlist)/6u);
 #endif
     while(wordlist[randIndex] != 0x0A) {
         randIndex++;
@@ -44,46 +48,15 @@ WebServer* CreateWebServerWithFD(int sd) {
         server->secret_word[i] = tolower(wordlist[randIndex+i]);
     }
     printf("The word: %s\n", server->secret_word);
+
+#ifdef __wasi__
     server->server_fd = sd;
-    server->address.sin_family = AF_INET;
-    server->address.sin_addr.s_addr = INADDR_ANY;
     server->address.sin_port = htons(8080);
-
-    return server;
-}
 #else
-WebServer* CreateWebServerWithPort(uint16_t port) {
-    struct timespec nanos;
-    clock_gettime(CLOCK_MONOTONIC, &nanos);
-    srand(nanos.tv_nsec);
-
-    WebServer *server = (WebServer*) malloc(sizeof(WebServer));
-    if (server == NULL) {
-        perror("In malloc");
-        exit(EXIT_FAILURE);
-    }
-
-    unsigned int randIndex = rand() % (sizeof(wordlist)/6u);
-#ifdef DEBUG
-    printf("randIndex: %d\nsizeof(wordlist): %ld\n", randIndex, sizeof(wordlist));
-#endif
-    while(wordlist[randIndex] != 0x0A) {
-        randIndex++;
-    }
-    randIndex++;
-    int i;
-    for(i = 0; i < WORD_SIZE; i++) {
-        server->secret_word[i] = tolower(wordlist[randIndex+i]);
-    }
-    printf("The word: %s\n", server->secret_word);
-
     if ((server->server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("In sockets");
         exit(EXIT_FAILURE);
     }
-
-    server->address.sin_family = AF_INET;
-    server->address.sin_addr.s_addr = INADDR_ANY;
     server->address.sin_port = htons(port);
     memset(server->address.sin_zero, '\0', sizeof server->address.sin_zero);
 
@@ -96,10 +69,13 @@ WebServer* CreateWebServerWithPort(uint16_t port) {
         perror("In listen");
         exit(EXIT_FAILURE);
     }
+#endif
+
+    server->address.sin_family = AF_INET;
+    server->address.sin_addr.s_addr = INADDR_ANY;
 
     return server;
 }
-#endif
 
 void DestroyWebServer(WebServer* server) {
 #ifndef __wasi__
@@ -165,7 +141,7 @@ void RunWebServer(WebServer *server) {
                 write(new_socket, jquery, sizeof jquery);
             } else if (buffer[4] == 0x2f && buffer[5] == 0x67 && buffer[6] == 0x75 && buffer[7] == 0x65 && buffer[8] == 0x73 && buffer[9] == 0x73) {
                 int j;
-                char word[WORD_SIZE];
+                char word[WORD_SIZE+1] = {0x0};
                 for(i = 0; i < WORD_SIZE; i++) {
                     word[i] = buffer[16+i];
                 }

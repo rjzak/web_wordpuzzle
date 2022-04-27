@@ -4,7 +4,7 @@
 
 int main() {
 #ifdef __wasi__
-    char fdcount[2]; // FD integer + null terminator
+    char fdcount[3] = {0}; // FD integer + null terminator
     char *envvar = "FD_COUNT";
     int fd = 3; // Default Fd for the socket
     if (getenv(envvar)) {
@@ -23,7 +23,6 @@ int main() {
     WebServer * server = CreateWebServerWithFD(fd);
 #else
     WebServer * server = CreateWebServerWithPort(8080);
-
 #endif
     RunWebServer(server);
     DestroyWebServer(server);
