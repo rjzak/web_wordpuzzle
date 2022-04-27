@@ -9,7 +9,7 @@ const unsigned char CONTENT_TYPE_PLAIN[26] = "Content-Type: text/plain\n\n";
 const unsigned char CONTENT_TYPE_JAVASCRIPT[31] = "Content-Type: text/javascript\n\n";
 
 
-#ifdef WEB_ASSEMBLY_ASSUMED
+#ifdef __wasi__
 // WebAssembly requires use of an existing socket descriptor
 WebServer* CreateWebServerWithFD(int sd) {
     srand(time(NULL));
@@ -83,7 +83,7 @@ WebServer* CreateWebServerWithPort(uint16_t port) {
 #endif
 
 void DestroyWebServer(WebServer* server) {
-#ifndef WEB_ASSEMBLY_ASSUMED
+#ifndef __wasi__
     close(server->server_fd);
     server->server_fd = 0;
 #endif
@@ -92,7 +92,7 @@ void DestroyWebServer(WebServer* server) {
 }
 
 void RunWebServer(WebServer *server) {
-#ifndef WEB_ASSEMBLY_ASSUMED
+#ifndef __wasi__
     int addrlen = sizeof(server->address);
 #endif
     char buffer[30000] = {0};
@@ -100,7 +100,7 @@ void RunWebServer(WebServer *server) {
     printf("Listening for connections\n");
     while(1) {
         int new_socket;
-#ifndef WEB_ASSEMBLY_ASSUMED
+#ifndef __wasi__
         if ((new_socket = accept(server->server_fd, (struct sockaddr *)&server->address, (socklen_t*)&addrlen))<0) {
             perror("In accept");
             exit(EXIT_FAILURE);
@@ -176,7 +176,7 @@ void RunWebServer(WebServer *server) {
             }
         }
 
-#ifndef WEB_ASSEMBLY_ASSUMED
+#ifndef __wasi__
 #ifdef DEBUG
         printf("Closing socket.\n");
 #endif

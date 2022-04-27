@@ -2,7 +2,7 @@
 #include "www.h"
 
 int main() {
-#ifdef WEB_ASSEMBLY_ASSUMED
+#ifdef __wasi__
     char fdcount[2]; // FD integer + null terminator
     char *envvar = "FD_COUNT";
     int fd = 3; // Default Fd for the socket
