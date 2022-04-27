@@ -1,17 +1,9 @@
 #ifndef www_h__
 #define www_h__
 
-#include <errno.h>
-#include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 // Modelled after
 // https://github.com/Dungyichao/http_server/blob/master/src/helloworld.cpp

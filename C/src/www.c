@@ -1,6 +1,12 @@
 #include "www.h"
 #include "assets.h"
-#include<ctype.h>
+#include <ctype.h>
+#include <errno.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 const unsigned char HTTP_OK[13] = "HTTP/1.0 200\n";
 const unsigned char HTTP_NOT_FOUND[13] = "HTTP/1.0 403\n";
@@ -8,11 +14,16 @@ const unsigned char CONTENT_TYPE_HTML[25] = "Content-Type: text/html\n\n";
 const unsigned char CONTENT_TYPE_PLAIN[26] = "Content-Type: text/plain\n\n";
 const unsigned char CONTENT_TYPE_JAVASCRIPT[31] = "Content-Type: text/javascript\n\n";
 
+#define BUFF_LEN 5000
 
 #ifdef __wasi__
 // WebAssembly requires use of an existing socket descriptor
 WebServer* CreateWebServerWithFD(int sd) {
-    srand(time(NULL));
+    //srand( (unsigned int) time(NULL));
+
+    struct timespec nanos;
+    clock_gettime(CLOCK_MONOTONIC, &nanos);
+    srand(nanos.tv_nsec);
 
     WebServer *server = (WebServer*) malloc(sizeof(WebServer));
     if (server == NULL) {
@@ -20,12 +31,15 @@ WebServer* CreateWebServerWithFD(int sd) {
         exit(EXIT_FAILURE);
     }
 
-    int randIndex = rand() % (sizeof(wordlist)/12u);
+    unsigned int randIndex = rand() % (sizeof(wordlist)/6u);
+#ifdef DEBUG
+    printf("randIndex: %d\nsizeof(wordlist): %ld\n", randIndex, sizeof(wordlist));
+#endif
     while(wordlist[randIndex] != 0x0A) {
         randIndex++;
     }
     randIndex++;
-    int i;
+    unsigned int i;
     for(i = 0; i < WORD_SIZE; i++) {
         server->secret_word[i] = tolower(wordlist[randIndex+i]);
     }
@@ -39,7 +53,9 @@ WebServer* CreateWebServerWithFD(int sd) {
 }
 #else
 WebServer* CreateWebServerWithPort(uint16_t port) {
-    srand(time(NULL));
+    struct timespec nanos;
+    clock_gettime(CLOCK_MONOTONIC, &nanos);
+    srand(nanos.tv_nsec);
 
     WebServer *server = (WebServer*) malloc(sizeof(WebServer));
     if (server == NULL) {
@@ -47,7 +63,10 @@ WebServer* CreateWebServerWithPort(uint16_t port) {
         exit(EXIT_FAILURE);
     }
 
-    int randIndex = rand() % (sizeof(wordlist)/12u);
+    unsigned int randIndex = rand() % (sizeof(wordlist)/6u);
+#ifdef DEBUG
+    printf("randIndex: %d\nsizeof(wordlist): %ld\n", randIndex, sizeof(wordlist));
+#endif
     while(wordlist[randIndex] != 0x0A) {
         randIndex++;
     }
@@ -95,23 +114,23 @@ void RunWebServer(WebServer *server) {
 #ifndef __wasi__
     int addrlen = sizeof(server->address);
 #endif
-    char buffer[30000] = {0};
-    const size_t bufferlen = 30000;
+    char buffer[BUFF_LEN] = {0};
     printf("Listening for connections\n");
     while(1) {
         int new_socket;
-#ifndef __wasi__
+
+#ifdef __wasi__
+        if ((new_socket = __wasi_sock_accept(server->server_fd, SOCK_NONBLOCK, 0))<0) {
+#else
         if ((new_socket = accept(server->server_fd, (struct sockaddr *)&server->address, (socklen_t*)&addrlen))<0) {
+#endif
             perror("In accept");
             exit(EXIT_FAILURE);
         }
-#else
-        new_socket = server->server_fd;
-#endif
 
-        memset(buffer,0,bufferlen);
+        memset(buffer,0,BUFF_LEN);
         errno = 0;
-        ssize_t bytes_read = read(new_socket ,buffer,bufferlen);
+        ssize_t bytes_read = read(new_socket ,buffer,BUFF_LEN);
         if (bytes_read < 0) {
             fprintf(stderr, "Error code %ld from read(%d): %s\n", bytes_read, new_socket, strerror(errno));
             return;

@@ -15,6 +15,9 @@ www.o: src/www.c src/www.h src/assets.h
 web_wordpuzzle: main.o www.o
 	gcc main.o www.o -o web_wordpuzzle ${FLAGS}
 
+web_wordpuzzle_debug: src/main.c src/www.h src/www.c src/assets.h
+	gcc src/main.c src/www.c ${FLAGS} -DDEBUG -ggdb -o web_wordpuzzle_debug
+
 web_wordpuzzle.wasm: src/main.c src/www.c src/www.h
 	${WASISDK}/bin/clang --sysroot=${WASISDK}/share/wasi-sysroot/ src/main.c src/www.c -Isrc/ -DDEBUG -o web_wordpuzzle.wasm
 
@@ -23,4 +26,4 @@ run_wasm: web_wordpuzzle.wasm
 
 .phony: clean
 clean:
-	rm -f *.o web_wordpuzzle web_wordpuzzle.wasm src/assets.h
+	rm -f *.o web_wordpuzzle web_wordpuzzle_debug web_wordpuzzle.wasm src/assets.h

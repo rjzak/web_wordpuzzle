@@ -3,3 +3,4 @@ src/assets.h
 *.o
 *.wasm
 web_wordpuzzle
+web_wordpuzzle_debug
