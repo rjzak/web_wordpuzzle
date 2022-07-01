@@ -18,12 +18,12 @@ int main() {
         // Let's assume that we're using the last one
         snprintf(fdcount, 2, "%s", getenv(envvar));
 #ifdef DEBUG
-        printf("Got FD_COUNT=%s\n", fdcount);
+        fprintf(stderr, "Got FD_COUNT=%s\n", fdcount);
 #endif
         // Minus 1 for zero index
         fd = atoi(fdcount)-1;
 #ifdef DEBUG
-        printf("FD=%d\n", fd);
+        fprintf(stderr, "FD=%d\n", fd);
 #endif
     }
     WebServer * server = CreateWebServerWithFD(fd);

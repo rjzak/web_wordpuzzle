@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 const unsigned char HTTP_OK[13] = "HTTP/1.0 200\n";
-const unsigned char HTTP_NOT_FOUND[13] = "HTTP/1.0 403\n";
+const unsigned char HTTP_NOT_FOUND[13] = "HTTP/1.0 404\n";
 const unsigned char CONTENT_TYPE_HTML[25] = "Content-Type: text/html\n\n";
 const unsigned char CONTENT_TYPE_PLAIN[26] = "Content-Type: text/plain\n\n";
 const unsigned char CONTENT_TYPE_JAVASCRIPT[31] = "Content-Type: text/javascript\n\n";
@@ -87,96 +87,140 @@ void DestroyWebServer(WebServer* server) {
 }
 
 void RunWebServer(WebServer *server) {
-#ifndef __wasi__
-    int addrlen = sizeof(server->address);
-#endif
+    socklen_t addrlen = 0;
     char buffer[BUFF_LEN] = {0};
+    int new_socket;
     printf("Listening for connections\n");
+    fflush(stdout);
     while(1) {
-        int new_socket;
-
-#ifdef __wasi__
-        if ((new_socket = __wasi_sock_accept(server->server_fd, SOCK_NONBLOCK, 0))<0) {
-#else
-        if ((new_socket = accept(server->server_fd, (struct sockaddr *)&server->address, (socklen_t*)&addrlen))<0) {
+#ifdef DEBUG
+        printf("Calling accept()\n");
+        fflush(stdout);
 #endif
+        if ((new_socket = accept(server->server_fd, (struct sockaddr *)&server->address, (socklen_t*)&addrlen))<0) {
             perror("In accept");
-            exit(EXIT_FAILURE);
+            return;
         }
 
         memset(buffer,0,BUFF_LEN);
         errno = 0;
+#ifdef DEBUG
+        printf("About to read from socket.\n");
+        fflush(stdout);
+#endif
         ssize_t bytes_read = read(new_socket ,buffer,BUFF_LEN);
         if (bytes_read < 0) {
             fprintf(stderr, "Error code %ld from read(%d): %s\n", bytes_read, new_socket, strerror(errno));
+            close(new_socket);
             return;
         }
         int i;
 #ifdef DEBUG
-        printf("First 20 bytes: ");
+        printf("Read from socket, first 20 bytes: ");
+        fflush(stdout);
         for(i = 0; i < 20; i++) {
             printf("%c", buffer[i]);
         }
         printf("\n");
+        fflush(stdout);
 #endif
 
         if (buffer[0] != 0x47 || buffer[1] != 0x45 || buffer[2] != 0x54) { // !GET
             write(new_socket, HTTP_NOT_FOUND, sizeof(HTTP_NOT_FOUND));
             write(new_socket, CONTENT_TYPE_PLAIN, sizeof(CONTENT_TYPE_PLAIN));
             write(new_socket, "Unsupported", 11);
-        } else {
-            if (buffer[4] == 0x2F && buffer[5] == 0x20) { // forward slash and space
 #ifdef DEBUG
-                printf("Root page, show gameboard\n");
+            printf("Closing socket.\n");
+            fflush(stdout);
 #endif
-                write(new_socket, HTTP_OK, sizeof(HTTP_OK));
-                write(new_socket, CONTENT_TYPE_HTML, sizeof(CONTENT_TYPE_HTML));
-                write(new_socket, board, sizeof(board));
-            } else if (buffer[4] == 0x2F && buffer[5] == 0x6A && buffer[6] == 0x71 && buffer[7] == 0x75) { // forward slash jqu
+            close(new_socket);
+            new_socket = 0;
+            continue;
+        }
+
+        if (buffer[4] == 0x2F && buffer[5] == 0x20) { // forward slash and space
 #ifdef DEBUG
-                printf("JQuery request\n");
+            printf("Root page, show gameboard\n");
+            fflush(stdout);
 #endif
-                write(new_socket, HTTP_OK, sizeof(HTTP_OK));
-                write(new_socket, CONTENT_TYPE_JAVASCRIPT, sizeof(CONTENT_TYPE_JAVASCRIPT));
-                write(new_socket, jquery, sizeof jquery);
-            } else if (buffer[4] == 0x2f && buffer[5] == 0x67 && buffer[6] == 0x75 && buffer[7] == 0x65 && buffer[8] == 0x73 && buffer[9] == 0x73) {
-                int j;
-                char word[WORD_SIZE+1] = {0x0};
-                for(i = 0; i < WORD_SIZE; i++) {
-                    word[i] = buffer[16+i];
-                }
-                char response[WORD_SIZE] = {0x63}; // c
+            write(new_socket, HTTP_OK, sizeof(HTTP_OK));
+            write(new_socket, CONTENT_TYPE_HTML, sizeof(CONTENT_TYPE_HTML));
+            write(new_socket, board, sizeof(board));
 #ifdef DEBUG
-                printf("Guess: %s\n", word);
+            printf("Closing socket.\n");
+            fflush(stdout);
 #endif
-                for(i = 0; i < WORD_SIZE; i++) {
-                    if (word[i] == server->secret_word[i]) {
-                        response[i] = 0x67; // g
-                    } else {
-                        for(j = 0; j < WORD_SIZE; j++) {
-                            if (word[i] == server->secret_word[j]) {
-                                response[i] = 0x79; // y
-                            }
+            close(new_socket);
+            new_socket = 0;
+            continue;
+        }
+
+        if (buffer[4] == 0x2F && buffer[5] == 0x6A && buffer[6] == 0x71 && buffer[7] == 0x75) { // forward slash jqu
+#ifdef DEBUG
+            printf("JQuery requested\n");
+            fflush(stdout);
+#endif
+            write(new_socket, HTTP_OK, sizeof(HTTP_OK));
+            write(new_socket, CONTENT_TYPE_JAVASCRIPT, sizeof(CONTENT_TYPE_JAVASCRIPT));
+            write(new_socket, jquery, sizeof(jquery));
+#ifdef DEBUG
+            printf("Closing socket.\n");
+            fflush(stdout);
+#endif
+            close(new_socket);
+            new_socket = 0;
+            continue;
+        }
+
+        if (buffer[4] == 0x2f && buffer[5] == 0x67 && buffer[6] == 0x75 && buffer[7] == 0x65 && buffer[8] == 0x73 && buffer[9] == 0x73) {
+            int j;
+            char *word = buffer + 16;
+            char response[WORD_SIZE];
+            for(i = 0; i < WORD_SIZE; i++) {
+                response[i] = 'c';
+            }
+#ifdef DEBUG
+            printf("Guess: ");
+            for(i = 0; i < WORD_SIZE; i++) {
+                printf("%c", word[i]);
+            }
+            printf("\n");
+            fflush(stdout);
+#endif
+            for(i = 0; i < WORD_SIZE; i++) {
+                if (word[i] == server->secret_word[i]) {
+                    response[i] = 0x67; // g
+                } else {
+                    for(j = 0; j < WORD_SIZE; j++) {
+                        if (word[i] == server->secret_word[j]) {
+                            response[i] = 0x79; // y
                         }
                     }
                 }
-                write(new_socket, HTTP_OK, sizeof(HTTP_OK));
-                write(new_socket, CONTENT_TYPE_PLAIN, sizeof(CONTENT_TYPE_PLAIN));
-                write(new_socket, response, WORD_SIZE);
-            } else {
-                printf("Unknown page\n");
-                write(new_socket, HTTP_NOT_FOUND, sizeof(HTTP_NOT_FOUND));
-                write(new_socket, CONTENT_TYPE_PLAIN, sizeof(CONTENT_TYPE_PLAIN));
-                write(new_socket, "Not found", 9);
             }
+            write(new_socket, HTTP_OK, sizeof(HTTP_OK));
+            write(new_socket, CONTENT_TYPE_PLAIN, sizeof(CONTENT_TYPE_PLAIN));
+            write(new_socket, response, WORD_SIZE);
+#ifdef DEBUG
+            printf("Closing socket.\n");
+            fflush(stdout);
+#endif
+            close(new_socket);
+            new_socket = 0;
+            continue;
         }
 
-#ifndef __wasi__
+        // If we've gotten this far, we don't know what to do with the request, so return 404
+        printf("Unknown page %c%c%c%c\n", buffer[5], buffer[6], buffer[7], buffer[8]);
+        write(new_socket, HTTP_NOT_FOUND, sizeof(HTTP_NOT_FOUND));
+        write(new_socket, CONTENT_TYPE_PLAIN, sizeof(CONTENT_TYPE_PLAIN));
+        write(new_socket, "Not found", 9);
+        fflush(stdout);
 #ifdef DEBUG
         printf("Closing socket.\n");
+        fflush(stdout);
 #endif
         close(new_socket);
         new_socket = 0;
-#endif
-    }
+    } // End while-loop
 }
