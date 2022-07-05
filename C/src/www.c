@@ -145,7 +145,7 @@ void RunWebServer(WebServer *server) {
 #endif
             write(new_socket, HTTP_OK, sizeof(HTTP_OK));
             write(new_socket, CONTENT_TYPE_HTML, sizeof(CONTENT_TYPE_HTML));
-            write(new_socket, board, sizeof(board));
+            write_all(new_socket, board, sizeof(board));
 #ifdef DEBUG
             printf("Closing socket.\n");
             fflush(stdout);
@@ -162,7 +162,7 @@ void RunWebServer(WebServer *server) {
 #endif
             write(new_socket, HTTP_OK, sizeof(HTTP_OK));
             write(new_socket, CONTENT_TYPE_JAVASCRIPT, sizeof(CONTENT_TYPE_JAVASCRIPT));
-            write(new_socket, jquery, sizeof(jquery));
+            write_all(new_socket, jquery, sizeof(jquery));
 #ifdef DEBUG
             printf("Closing socket.\n");
             fflush(stdout);
@@ -223,4 +223,15 @@ void RunWebServer(WebServer *server) {
         close(new_socket);
         new_socket = 0;
     } // End while-loop
+}
+
+ssize_t write_all(const int fd, const void *buf, const size_t n) {
+    size_t total_written = 0;
+    while(total_written < n) {
+        size_t written = write(fd, buf+total_written, n-total_written);
+        if (written < 0)
+            return written;
+        total_written += written;
+    }
+    return total_written;
 }

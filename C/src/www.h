@@ -28,4 +28,6 @@ WebServer* CreateWebServerWithPort(uint16_t port);
 void DestroyWebServer(WebServer* server);
 void RunWebServer(WebServer *server);
 
+ssize_t write_all(const int fd, const void *buf, const size_t n);
+
 #endif
