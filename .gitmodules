@@ -1,0 +1,3 @@
+[submodule "Java/teavm-wasi"]
+	path = Java/teavm-wasi
+	url = https://github.com/fermyon/teavm-wasi
