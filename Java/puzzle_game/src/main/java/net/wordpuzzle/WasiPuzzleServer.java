@@ -6,13 +6,14 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Socket;
 
 public class WasiPuzzleServer implements AutoCloseable {
-    private final FDSocket fdsocket;
     private final WordPuzzle puzzle = new WordPuzzle();
+    private final Socket fdsocket;
 
     public WasiPuzzleServer(int fd) {
-        fdsocket = new FDSocket(fd);
+        fdsocket = new Socket(fd);
     }
 
     public void start() {
